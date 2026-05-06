@@ -17,6 +17,20 @@
   #if-header a { color: #7db87d; text-decoration: none; }
   #if-header a:hover { color: #e8e8e8; }
   #if-header .right { color: #666; font-size: 11px; }
+  #if-header .controls {
+    display: flex; align-items: center; gap: 4px;
+    margin-left: auto; margin-right: 12px;
+  }
+  #if-header .controls button {
+    background: #1a1a1a; color: #b0b0b0;
+    border: 1px solid #2a2a2a; border-radius: 2px;
+    width: 22px; height: 22px;
+    font: 14px/1 'Courier New', Courier, monospace;
+    cursor: pointer; padding: 0;
+  }
+  #if-header .controls button:hover { color: #e8e8e8; border-color: #3a3a3a; }
+  #if-header .controls button:disabled { opacity: 0.4; cursor: default; }
+  #if-header .controls .label { color: #666; font-size: 10px; padding: 0 2px; }
   #if-banner {
     background: #3a2a00; color: #e8c46a;
     font: 13px/1.4 -apple-system, sans-serif;
@@ -35,6 +49,11 @@
 <body>
 <header id="if-header">
   <a href="/">&larr; Interactive Fiction</a>
+  <div class="controls">
+    <span class="label">Aa</span>
+    <button id="if-font-down" type="button" title="Decrease font size">&minus;</button>
+    <button id="if-font-up" type="button" title="Increase font size">+</button>
+  </div>
   <span class="right" id="if-user"></span>
 </header>
 <div id="if-banner"></div>
@@ -47,6 +66,34 @@
   </div>
 </div>
 <script src="/public/jquery.min.js"></script>
+<script>
+  // Font-size adjuster: scales --glkote-buffer-size and --glkote-grid-size
+  // together, persisted in localStorage.
+  (function() {
+    const KEY = 'parchment:font-size';
+    const DEFAULT_BUF = 15;
+    const MIN = 10, MAX = 28;
+    let size = parseInt(localStorage.getItem(KEY) || '', 10);
+    if (!size || size < MIN || size > MAX) size = DEFAULT_BUF;
+    function apply(s) {
+      // Only scale the buffer (prose) window. The grid (status) window is sized
+      // in pixels at startup based on character metrics; scaling its font after
+      // the fact overflows the fixed-width status bar.
+      document.documentElement.style.setProperty('--glkote-buffer-size', s + 'px');
+      localStorage.setItem(KEY, String(s));
+      const down = document.getElementById('if-font-down');
+      const up = document.getElementById('if-font-up');
+      if (down) down.disabled = s <= MIN;
+      if (up) up.disabled = s >= MAX;
+    }
+    apply(size);
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('if-font-down').addEventListener('click', () => { if (size > MIN) apply(--size); });
+      document.getElementById('if-font-up').addEventListener('click', () => { if (size < MAX) apply(++size); });
+      apply(size); // re-apply to set disabled state once buttons are in DOM
+    });
+  })();
+</script>
 <script type="module">
   import { HttpSaveDialog, detectAuth, showOfflineBanner, showResumeHint } from '/public/shim/http-provider.js';
   import { SyncDialog, prewarm, isZMachine } from '/public/shim/sync-dialog.js';
