@@ -1,0 +1,40 @@
+--- a/src/common/formats.ts
++++ b/src/common/formats.ts
+@@ -151,29 +151,30 @@ export const formats: Format[] = [
+         blorbable: true,
+         extensions: /\.(zblorb|zlb|z3|z4|z5|z8)/i,
+         engines: [
+-            /*{
++            {
+                 id: 'zvm',
+                 load: ['zvm.js'],
+-                start: (_story: StoryOptions, options, requires) =>
++                start: async (story: StoryOptions, options, requires) =>
+                 {
+-                    const [file_data, zvm] = requires
++                    const [zvm] = requires
++                    const file_data = await options.Dialog.read(story.path!)
+
+                     const vm = new zvm.ZVM()
+-                    const vm_options = Object.assign({}, options, {
++                    const vm_options: any = Object.assign({}, options, {
+                         vm,
+                         GiDispa: new zvm.ZVMDispatch(),
+                     })
+
+                     vm.prepare(file_data, vm_options)
+                     vm_options.Glk.init(vm_options)
+                 },
+-            },*/
++            },
+
+-            {
++            /*{
+                 id: 'bocfel',
+                 load: ['bocfel.js', 'bocfel.wasm'],
+                 start: generic_emglken_vm,
+-            },
++            },*/
+         ],
+     },
+ ]

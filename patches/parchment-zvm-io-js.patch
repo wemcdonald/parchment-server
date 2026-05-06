@@ -1,0 +1,33 @@
+--- a/src/upstream/ifvms.js/src/zvm/io.js
++++ b/src/upstream/ifvms.js/src/zvm/io.js
+@@ -102,6 +102,10 @@
+ 			// Index 0 is input stream 1, the output streams follow
+ 			streams: [ 0, 1, {}, [], {} ],
+ 
++			// Accumulator: text printed to mainwin since the last line-input.
++			// Used by autosave/autorestore to repaint the player's last view.
++			last_screen: '',
++
+ 			currentwin: 0,
+ 			
+ 			// Use Zarf's algorithm for the upper window
+@@ -273,6 +277,11 @@
+ 	// Handle line input
+ 	handle_line_input: function( len, terminator )
+ 	{
++		// Reset the per-turn screen accumulator. Glk echoes the player's
++		// input directly to the buffer window (bypassing _print), so this
++		// clears between turns and we re-accumulate the game's response.
++		this.io.last_screen = '';
++
+ 		var ram = this.ram,
+ 		options = this.read_data,
+ 		streams = this.io.streams,
+@@ -603,6 +612,7 @@
+ 				if ( io.streams[1] )
+ 				{
+ 					Glk.glk_put_jstring( text );
++					io.last_screen += text;
+ 				}
+ 				// Transcript
+ 				if ( io.streams[2].mode === 1 )

@@ -1,0 +1,11 @@
+--- a/build.js
++++ b/build.js
+@@ -125,7 +125,7 @@ if (projects.includes('web')) {
+             tads: 'node_modules/emglken/build/tads.*',
+             waiting: 'src/common/waiting.gif',
+             web: 'src/common/launcher.ts',
+-            //zvm: 'src/common/zvm.js',
++            zvm: 'src/common/zvm.js',
+         },
+         outdir: 'dist/web',
+         sourcemap: true,

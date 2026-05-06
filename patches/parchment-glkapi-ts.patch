@@ -1,0 +1,33 @@
+--- a/src/upstream/asyncglk/src/glkapi/glkapi.ts
++++ b/src/upstream/asyncglk/src/glkapi/glkapi.ts
+@@ -191,11 +191,11 @@ export class AsyncGlk implements Interface.GlkApi {
+         return !!(this.GlkOte && this.VM)
+     }
+
+-    restore_allstate(_state: any) {
+-        throw new Error('Autosaves not yet supported')
++    restore_allstate(_state: any): void {
++        // Glk state restoration is not yet supported. Z-machine RAM autorestore handles game state.
+     }
+-    save_allstate() {
+-        throw new Error('Autosaves not yet supported')
++    save_allstate(): any {
++        return {}
+     }
+
+     update() {
+@@ -257,8 +257,12 @@ export class AsyncGlk implements Interface.GlkApi {
+         // Clone the state so that any objects copied into it won't be at risk of modification by GlkOte
+         this.GlkOte.update(cloneDeep(state))
+         this.before_select_hook?.()
+-        // TODO
+-        // if (this.do_autosave) {}
++        if (this.do_autosave && (this.VM as any)?.do_autosave) {
++            const dispa = this.GiDispa as any
++            if (!dispa?.check_autosave || dispa.check_autosave()) {
++                (this.VM as any).do_autosave(0)
++            }
++        }
+     }
+
+     // References to other things

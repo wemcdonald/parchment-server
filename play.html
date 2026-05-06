@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parchment</title>
+<link rel="stylesheet" href="/public/web.css">
+<style>
+  body { margin: 0; }
+  #if-header {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 32px; padding: 0 12px;
+    background: #0d0d0d; color: #b0b0b0;
+    font: 12px/1.4 'Courier New', Courier, monospace;
+    border-bottom: 1px solid #1e1e1e;
+  }
+  #if-header a { color: #7db87d; text-decoration: none; }
+  #if-header a:hover { color: #e8e8e8; }
+  #if-header .right { color: #666; font-size: 11px; }
+  #if-banner {
+    background: #3a2a00; color: #e8c46a;
+    font: 13px/1.4 -apple-system, sans-serif;
+    text-align: center; padding: 6px 12px;
+    border-bottom: 1px solid #5a4200; display: none;
+  }
+  #if-resume-hint {
+    background: #1a2818; color: #a8d8a8;
+    padding: 6px 12px; font: 12px/1.4 'Courier New', Courier, monospace;
+    border-bottom: 1px solid #2a3a28; display: none;
+  }
+  #parchment { height: calc(100vh - 32px); position: relative; }
+  #parchment.with-hint { height: calc(100vh - 32px - 28px); }
+</style>
+</head>
+<body>
+<header id="if-header">
+  <a href="/">&larr; Interactive Fiction</a>
+  <span class="right" id="if-user"></span>
+</header>
+<div id="if-banner"></div>
+<div id="if-resume-hint"></div>
+<div id="parchment">
+  <div id="gameport">
+    <div id="windowport"></div>
+    <div id="loadingpane">Loading...</div>
+    <div id="errorpane" style="display:none"><div id="errorcontent"></div></div>
+  </div>
+</div>
+<script src="/public/jquery.min.js"></script>
+<script type="module">
+  import { HttpSaveDialog, detectAuth, showOfflineBanner, showResumeHint } from '/public/shim/http-provider.js';
+  import { SyncDialog, prewarm, isZMachine } from '/public/shim/sync-dialog.js';
+
+  const user = await detectAuth();
+  if (user) document.getElementById('if-user').textContent = user;
+  else showOfflineBanner();
+
+  const params = new URLSearchParams(location.search);
+  const story = params.get('story') || '';
+  const baseName = story.split('/').pop() || '';
+  const game = baseName.replace(/\.[^.]+$/, '').toLowerCase();
+  const useSync = isZMachine(baseName);
+
+  const http = user ? new HttpSaveDialog(user) : null;
+  let dialog;
+
+  if (useSync) {
+    const prewarmed = await prewarm({ http, game }).catch(e => {
+      console.warn('prewarm failed', e);
+      return { prewarmedAutosave: null, prewarmedNamedSaves: [] };
+    });
+    dialog = new SyncDialog({ http, storyname: game, ...prewarmed });
+    if (prewarmed.prewarmedAutosave) {
+      const hint = document.getElementById('if-resume-hint');
+      if (hint) {
+        hint.textContent = 'Resumed from autosave. Type RESTART to start over.';
+        hint.style.display = 'block';
+        document.getElementById('parchment')?.classList.add('with-hint');
+      }
+    } else if (http) {
+      showResumeHint(http).catch(() => {});
+    }
+  } else {
+    dialog = http;
+    if (http) showResumeHint(http).catch(() => {});
+  }
+
+  if (dialog) {
+    window.parchment_options = Object.assign({}, window.parchment_options, {
+      Dialog: dialog,
+      do_vm_autosave: 1,
+    });
+    window.addEventListener('beforeunload', () => {
+      if (http && typeof http.flush === 'function') http.flush();
+    });
+  }
+
+  await import('/public/web.js');
+</script>
+</body>
+</html>
